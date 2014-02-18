@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap 
+            PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+            "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="todo">
+
+	<insert id="insert" parameterClass="xxxxxx.yyyyyy.zzzzzz.domain.model.Todo">
+		INSERT INTO todo
+		(
+		todo_id
+		,todo_title
+		,finished
+		,created_at
+		,version
+		)
+		values(
+		#todoId#
+		,#todoTitle#
+		,#finished#
+		,#createdAt#
+		,1
+		)
+	</insert>
+
+	<update id="update" parameterClass="xxxxxx.yyyyyy.zzzzzz.domain.model.Todo">
+		UPDATE todo SET
+		todo_id = #todoId#
+		,todo_title = #todoTitle#
+		,finished = #finished#
+		,version = (#version# + 1)
+		WHERE
+		todo_id = #todoId#
+		AND version = #version#
+	</update>
+
+	<delete id="delete" parameterClass="java.lang.String">
+		DELETE FROM
+		todo
+		WHERE
+		todo_id = #todoId#
+	</delete>
+
+	<resultMap id="resultMap_Todo" class="Todo">
+		<result property="todoId" column="todo_id" />
+		<result property="todoTitle" column="todo_title" />
+		<result property="finished" column="finished" />
+		<result property="createdAt" column="created_at" />
+		<result property="version" column="version" />
+	</resultMap>
+
+	<select id="findOne" parameterClass="long" resultMap="resultMap_Todo">
+		SELECT
+		*
+		FROM
+		todo
+		WHERE
+		todo_id = #todoId#
+	</select>
+
+	<!-- <sql id="fragment_where_byFinished"> WHERE finished = #finished# </sql> -->
+	<sql id="fragment_where_byFinished">
+		WHERE
+		finished = ${FINISHED_TRUE}
+	</sql>
+
+
+
+	<sql id="fragment_order">
+		ORDER BY
+		created_at DESC
+	</sql>
+
+	<select id="findByFinished" parameterClass="boolean" resultMap="resultMap_Todo"
+		fetchSize="${defaultFetchSize}">
+		SELECT
+		*
+		FROM
+		todo
+		<include refid="fragment_where_byFinished" />
+		ORDER BY
+		created_at DESC
+	</select>
+
+	<select id="countByFinished" parameterClass="boolean"
+		resultClass="long">
+		SELECT
+		count(*)
+		FROM
+		todo
+		<include refid="fragment_where_byFinished" />
+	</select>
+
+
+
+	<select id="findPageByFinished" parameterClass="xxxxxx.yyyyyy.zzzzzz.domain.dto.PageableBindParams"
+		resultMap="resultMap_Todo">
+		SELECT
+		*
+		FROM
+		todo
+		WHERE
+		finished = #bindParams#
+		<include refid="fragment_order" />
+		OFFSET
+		#pageable.offset#
+		LIMIT
+		#pageable.pageSize#
+	</select>
+
+
+	<select id="findPageOrderByFinished" parameterClass="xxxxxx.yyyyyy.zzzzzz.domain.dto.PageableBindParams"
+		resultMap="resultMap_Todo">
+		SELECT
+		*
+		FROM
+		todo
+		WHERE
+		finished = #bindParams#
+		<iterate property="pageable.sort.orders" open="ORDER BY"
+			conjunction=",">
+			$pageable.sort.orders[].property$ $pageable.sort.orders[].direction$
+		</iterate>
+		${paginationSql}
+
+	</select>
+
+	<select id="selectKey" resultClass="long">
+		SELECT NEXTVAL('s_todo')
+	</select>
+
+	<update id="updateHoldByUnfinished" parameterClass="int"> <!-- (9) -->
+         <![CDATA[
+         UPDATE
+             todo
+         SET
+             todo_title = '[Over Deadline] ' || todo_title
+             ,version = (version + 1)
+         WHERE
+             finished = false
+         AND
+             created_at < current_date - #deadlineDays#
+         ]]>
+	</update>
+
+	<parameterMap id="insertBigdataParamMap"
+		class="xxxxxx.yyyyyy.zzzzzz.domain.dbaccess.mybatis.Bigdata">
+		<parameter property="id" />
+		<parameter property="bytes"
+			typeHandler="com.ibatis.sqlmap.engine.type.ByteArrayTypeHandler" />
+	</parameterMap>
+
+	<insert id="insertBigdata" parameterMap="insertBigdataParamMap">
+		INSERT INTO test_bigdata (id,bytes) VALUES(?,?)
+	</insert>
+
+	<resultMap id="insertBigdataResultMap"
+		class="xxxxxx.yyyyyy.zzzzzz.domain.dbaccess.mybatis.Bigdata">
+		<result property="id" />
+		<result property="bytes"
+			typeHandler="com.ibatis.sqlmap.engine.type.ByteArrayTypeHandler" />
+	</resultMap>
+
+	<select id="findBigdataById" resultMap="insertBigdataResultMap">
+		SELECT id as "id" , bytes as "bytes" FROM test_bigdata
+		WHERE id = #id#
+	</select>
+
+    <parameterMap id="salesItemMap" class="xxxxxx.yyyyyy.zzzzzz.domain.model.SalesItem">
+        <parameter property="id" jdbcType="INTEGER" javaType="java.lang.Integer" mode="IN" />
+        <parameter property="quantity" jdbcType="INTEGER" javaType="java.lang.Integer" mode="OUT" />
+        <parameter property="total" jdbcType="INTEGER" javaType="java.lang.Integer" mode="OUT" />
+    </parameterMap>
+    
+    <procedure id="findSalesItem" parameterMap="salesItemMap">
+        {call sales_item(?,?,?)}
+    </procedure>
+
+</sqlMap>

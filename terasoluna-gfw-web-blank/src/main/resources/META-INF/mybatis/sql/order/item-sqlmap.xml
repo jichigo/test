@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap 
+            PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+            "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="item">
+
+    <resultMap id="itemMap" class="Item" >
+        <result property="code" column="code" />
+        <result property="name" column="name" />
+        <result property="price" column="price" />
+        <result property="categories" column="code" select="category.findByItemCode"/>
+    </resultMap>
+
+    <select id="findOne" parameterClass="java.lang.String" resultMap="itemMap">
+        SELECT
+            *
+        FROM
+            m_item
+        WHERE
+            code = #code#
+    </select>
+
+</sqlMap>

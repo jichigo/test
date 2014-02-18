@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap 
+            PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+            "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="order">
+    <sql id="fragment_selectFormJoin_of_find">
+        SELECT
+            o.id
+            ,os.code AS status_code
+            ,os.name AS status_name
+            ,ol.quantity
+            ,i.code AS item_code
+            ,i.name AS item_name
+            ,i.price AS item_price
+            ,ct.code AS category_code
+            ,ct.name AS category_name
+            ,cp.code AS coupon_code
+            ,cp.name AS coupon_name
+            ,cp.price AS coupon_price
+        FROM
+            t_order o
+        INNER JOIN
+            c_order_status os
+                ON os.code = o.status_code
+        INNER JOIN
+            t_orderline ol
+                ON ol.order_id = o.id
+        INNER JOIN
+            m_item i
+                ON i.code = ol.item_code
+        INNER JOIN
+            m_item_category ic
+                ON ic.item_code = i.code
+        INNER JOIN
+            m_category ct
+                ON ct.code = ic.category_code
+        LEFT JOIN
+            t_order_coupon oc
+                ON oc.order_id = o.id
+        LEFT JOIN
+            m_coupon cp
+                ON cp.code = oc.coupon_code
+    </sql>
+
+
+    <resultMap id="orderResultMap" class="Order" groupBy="id">
+        <result property="id" column="id" />
+        <result property="status" resultMap="order.orderStatusResultMap" />
+
+        <result property="orderItems" resultMap="order.orderItemResultMap" />
+
+        <result property="orderCoupons" resultMap="order.orderCouponResultMap" />
+    </resultMap>
+    
+    <resultMap id="orderStatusResultMap" class="OrderStatus">
+        <result property="code" column="status_code" />
+        <result property="name" column="status_name" />
+    </resultMap>
+
+    <resultMap id="orderItemResultMap" class="OrderItem" groupBy="itemCode">
+        <result property="itemCode" column="item_code" />
+        <result property="item" resultMap="order.itemResultMap" />
+        <result property="quantity" column="quantity" />
+    </resultMap>
+
+    <resultMap id="itemResultMap" class="Item" groupBy="code">
+        <result property="code" column="item_code" />
+        <result property="name" column="item_name" />
+        <result property="price" column="item_price" />
+        <result property="categories" resultMap="order.categoryResultMap" />
+    </resultMap>
+
+    <resultMap id="categoryResultMap" class="Category" groupBy="code">
+        <result property="code" column="category_code" />
+        <result property="name" column="category_name" />
+    </resultMap>
+
+    <resultMap id="orderCouponResultMap" class="OrderCoupon" groupBy="couponCode">
+        <result property="couponCode" column="coupon_code" />
+        <result property="coupon" resultMap="order.couponResultMap" />
+    </resultMap>
+
+    <resultMap id="couponResultMap" class="Coupon">
+        <result property="code" column="coupon_code" />
+        <result property="name" column="coupon_name" />
+        <result property="price" column="coupon_price" />
+    </resultMap>
+    
+    <select id="findAll" resultMap="orderResultMap">
+        <include refid="fragment_selectFormJoin_of_find"/>
+        ORDER BY
+            o.id DESC
+            ,item_code ASC
+            ,category_code ASC
+            ,coupon_code ASC
+    </select>
+
+    <select id="findOne" parameterClass="java.lang.Integer" resultMap="orderResultMap">
+        <include refid="fragment_selectFormJoin_of_find"/>
+        WHERE
+            o.id = #id#
+        ORDER BY
+            item_code ASC
+            ,category_code ASC
+            ,coupon_code ASC
+    </select>
+
+</sqlMap>

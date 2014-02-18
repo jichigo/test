@@ -1,0 +1,50 @@
+/* @import url(https://fonts.googleapis.com/css?family=Lato:300italic,700italic,300,700); */
+
+th.no {
+    width: 40px;
+}
+
+th.articleClass {
+    width: 80px;
+}
+
+th.title {
+    width: 200px;
+}
+
+th.overview {
+    width: 264px;
+}
+
+th.date {
+    width: 100px;
+}
+
+td.no {
+    text-align: center;
+}
+
+td.date {
+    text-align: center;
+}
+
+.pageTitle {
+    text-align: center;
+}
+
+.pagePosition {
+    text-align: center;
+}
+
+#criteriaPart {
+    text-align: center;
+}
+
+#word {
+    width: 400px;
+}
+
+.message {
+    margin-top: 20px;
+    text-align: center;
+}
