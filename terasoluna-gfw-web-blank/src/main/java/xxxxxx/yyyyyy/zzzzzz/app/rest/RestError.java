@@ -1,21 +1,22 @@
 package xxxxxx.yyyyyy.zzzzzz.app.rest;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
 
-public class RestError {
+public class RestError implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final String code;
-
     private final String message;
-
     @JsonSerialize(include = Inclusion.NON_EMPTY)
-    private final List<RestErrorDetail> details = new ArrayList<RestErrorDetail>();
+    private final List<RestError> details = new ArrayList<>();
 
-    public RestError(String code, String message) {
+    public RestError(final String code, final String message) {
         this.code = code;
         this.message = message;
     }
@@ -28,13 +29,12 @@ public class RestError {
         return message;
     }
 
-    public List<RestErrorDetail> getDetails() {
+    public List<RestError> getDetails() {
         return details;
     }
 
-    public RestError addDetail(RestErrorDetail detail) {
+    public void addDetail(RestError detail) {
         details.add(detail);
-        return this;
     }
 
 }

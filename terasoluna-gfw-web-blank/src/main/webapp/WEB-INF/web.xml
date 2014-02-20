@@ -111,6 +111,23 @@
         </jsp-property-group>
     </jsp-config>
 
+
+    <!-- (1) -->
+    <error-page>
+        <error-code>404</error-code>
+<!--  
+        <location>/error?errorCode=e.ex.fw.6001</location>
+-->
+        <location>/WEB-INF/views/common/error/unhandledSystemError.json</location>
+    </error-page>
+
+    <!-- (2) -->
+    <error-page>
+        <exception-type>java.lang.Exception</exception-type>
+        <location>/WEB-INF/views/common/error/unhandledSystemError.json</location>
+    </error-page>
+
+<!--  
     <error-page>
         <error-code>500</error-code>
         <location>/WEB-INF/views/common/error/systemError.jsp</location>
@@ -123,6 +140,7 @@
         <exception-type>java.lang.Exception</exception-type>
         <location>/WEB-INF/views/common/error/unhandledSystemError.html</location>
     </error-page>
+-->
 
     <session-config>
         <!-- 30min -->

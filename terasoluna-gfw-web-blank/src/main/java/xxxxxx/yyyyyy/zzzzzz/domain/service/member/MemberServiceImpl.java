@@ -2,6 +2,7 @@ package xxxxxx.yyyyyy.zzzzzz.domain.service.member;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -13,9 +14,12 @@ import org.dozer.Mapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+import org.terasoluna.gfw.common.exception.BusinessException;
 import org.terasoluna.gfw.common.exception.ResourceNotFoundException;
+import org.terasoluna.gfw.common.exception.SystemException;
 import org.terasoluna.gfw.common.message.ResultMessages;
 
 import xxxxxx.yyyyyy.zzzzzz.domain.model.Member;
@@ -44,6 +48,17 @@ public class MemberServiceImpl implements MemberService {
     public Member createMember(Member inputtedMember) {
         inputtedMember.setMemberId(generateMemberId());
         members.put(inputtedMember.getMemberId(), inputtedMember);
+        if (new Random().nextBoolean()) {
+            // throw new
+            // BusinessException(ResultMessages.error().add("e.ex.mm.8001"));
+            // throw new SystemException("e.ex.fw.9004", String.format(
+            // "xxxx is not found. id = %s", "hoge"));
+            // throw new SystemException(null, String.format(
+            // "xxxx is not found. id = %s", "hoge"));
+//            throw new ObjectOptimisticLockingFailureException(Member.class,
+//                    "M1234");
+            throw new OutOfMemoryError("test");
+        }
         return inputtedMember;
     }
 
@@ -51,7 +66,7 @@ public class MemberServiceImpl implements MemberService {
         Member member = members.get(memberId);
         if (member == null) {
             throw new ResourceNotFoundException(ResultMessages.error().add(
-                    "e.xx.fw.5001", memberId));
+                    "e.ex.fw.6002", memberId));
         }
         return member;
     }

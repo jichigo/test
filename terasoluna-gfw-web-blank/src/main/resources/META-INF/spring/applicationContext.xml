@@ -29,20 +29,29 @@
         </property>
     </bean>
 
-    <!-- Exception Code Resolver. -->
-    <bean id="exceptionCodeResolver"
-        class="org.terasoluna.gfw.common.exception.SimpleMappingExceptionCodeResolver">
+
+    <bean id="exceptionCodeResolver" class="org.terasoluna.gfw.common.exception.SimpleMappingExceptionCodeResolver">
         <!-- Setting and Customization by project. -->
         <property name="exceptionMappings">
             <map>
-                <entry key="ResourceNotFoundException" value="e.xx.fw.5001" />
-                <entry key="BusinessException" value="e.xx.fw.8001" />
-                <entry key="MultipartException" value="e.xx.fw.6001" />
+                <entry key="JsonParseException" value="e.ex.fw.5501" />
+                <entry key="UnrecognizedPropertyException" value="e.ex.fw.5502" />
+                <entry key="JsonMappingException" value="e.ex.fw.5503" />
+                <entry key="HttpRequestMethodNotSupportedException" value="e.ex.fw.5004" />
+                <entry key="MediaTypeNotAcceptableException" value="e.ex.fw.5005" />
+                <entry key="HttpMediaTypeNotSupportedException" value="e.ex.fw.5006" />
+                <entry key="MethodArgumentNotValidException" value="e.ex.fw.5002" />
+                <entry key="BindException" value="e.ex.fw.5003" />
+                <entry key="ResourceNotFoundException" value="e.ex.fw.6001" />
+                <entry key="BusinessException" value="e.ex.fw.8001" />
+                <entry key="OptimisticLockingFailureException" value="e.ex.fw.8002" />
+                <entry key="PessimisticLockingFailureException" value="e.ex.fw.8002" />
                 
             </map>
         </property>
-        <property name="defaultExceptionCode" value="e.xx.fw.9001" />
+        <property name="defaultExceptionCode" value="e.ex.fw.9001" />
     </bean>
+
 
     <!-- Exception Logger. -->
     <bean id="exceptionLogger"

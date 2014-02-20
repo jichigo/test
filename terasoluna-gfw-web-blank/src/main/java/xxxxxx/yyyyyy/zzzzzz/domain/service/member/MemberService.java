@@ -16,7 +16,7 @@ public interface MemberService {
 
     Member createMember(Member inputtedMember);
 
-    Member getMember(@Size(max=1) String memberId);
+    Member getMember(String memberId);
 
     Member updateMember(String memberId, Member inputtedMember);
 

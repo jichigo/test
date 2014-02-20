@@ -1,105 +1,127 @@
 package xxxxxx.yyyyyy.zzzzzz.app.rest;
 
-import java.util.Locale;
-
 import javax.inject.Inject;
 
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.springframework.context.MessageSource;
-import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.expression.spel.ast.OpMinus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.terasoluna.gfw.common.exception.BusinessException;
+import org.terasoluna.gfw.common.exception.ExceptionCodeResolver;
+import org.terasoluna.gfw.common.exception.ResourceNotFoundException;
+import org.terasoluna.gfw.common.exception.ResultMessagesNotificationException;
 
+/**
+ * Global ExceptionHandler for RESTful Web Service.
+ */
 @ControllerAdvice
 public class RestGlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @Inject
-    MessageSource messageSource;
+    RestErrorCreator restErrorCreator;
+
+    @Inject
+    ExceptionCodeResolver exceptionCodeResolver;
 
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception ex,
             Object body, HttpHeaders headers, HttpStatus status,
             WebRequest request) {
-        RestError error;
-        if (body != null) {
-            return super.handleExceptionInternal(ex, body, headers, status,
-                    request);
+        Object errorBody;
+        if (body == null) {
+            String code = exceptionCodeResolver.resolveExceptionCode(ex);
+            errorBody = restErrorCreator.createRestError(code,
+                    ex.getLocalizedMessage(), request.getLocale());
         } else {
-            if (HttpStatus.BAD_REQUEST.value() <= status.value()
-                    && status.value() < HttpStatus.INTERNAL_SERVER_ERROR
-                            .value()) {
-                error = createError("e.xx.fw.5000", request.getLocale());
-            } else {
-                error = createError("e.xx.fw.9001", request.getLocale());
-            }
-            return super.handleExceptionInternal(ex, error, headers, status,
-                    request);
+            errorBody = body;
         }
+        return new ResponseEntity<>(errorBody, headers, status);
     }
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers,
             HttpStatus status, WebRequest request) {
-        RestError error = createError("e.xx.fw.6500", request.getLocale());
-        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
-            error.addDetail(createErrorDetail(fieldError, request.getLocale()));
-        }
-        for (ObjectError objectError : ex.getBindingResult().getGlobalErrors()) {
-            error.addDetail(createErrorDetail(objectError, request.getLocale()));
-        }
-        return super.handleExceptionInternal(ex, error, headers, status,
+        return handleBindingResult(ex, ex.getBindingResult(), headers, status,
                 request);
     }
 
     @Override
     protected ResponseEntity<Object> handleBindException(BindException ex,
             HttpHeaders headers, HttpStatus status, WebRequest request) {
-        RestError error = createError("e.xx.fw.6500", request.getLocale());
-        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
-            error.addDetail(createErrorDetail(fieldError, request.getLocale()));
-        }
-        for (ObjectError objectError : ex.getBindingResult().getGlobalErrors()) {
-            error.addDetail(createErrorDetail(objectError, request.getLocale()));
-        }
-        return super.handleExceptionInternal(ex, error, headers, status,
+        return handleBindingResult(ex, ex.getBindingResult(), headers, status,
                 request);
+    }
+
+    protected ResponseEntity<Object> handleBindingResult(Exception ex,
+            BindingResult bindingResult, HttpHeaders headers,
+            HttpStatus status, WebRequest request) {
+        String code = exceptionCodeResolver.resolveExceptionCode(ex);
+        RestError errorBody = restErrorCreator.createBindingResultRestError(
+                code, bindingResult, ex.getLocalizedMessage(),
+                request.getLocale());
+        return handleExceptionInternal(ex, errorBody, headers, status, request);
     }
 
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex, HttpHeaders headers,
             HttpStatus status, WebRequest request) {
-        RestError error;
-        if (ex.getCause() instanceof JsonParseException) {
-            error = createError("e.xx.fw.6502", request.getLocale());
-        } else if (ex.getCause() instanceof JsonMappingException) {
-            error = createError("e.xx.fw.6501", request.getLocale());
+        if (ex.getCause() instanceof Exception) {
+            return handleExceptionInternal((Exception) ex.getCause(), null,
+                    headers, status, request);
         } else {
-            error = createError("e.xx.fw.6000", request.getLocale());
+            return handleExceptionInternal(ex, null, headers, status, request);
         }
-        return super.handleExceptionInternal(ex, error, headers, status,
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Object> handleResourceNotFoundException(
+            ResourceNotFoundException ex, WebRequest request) {
+        return handleResultMessagesNotificationException(ex, null,
+                HttpStatus.NOT_FOUND, request);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Object> handleBusinessException(BusinessException ex,
+            WebRequest request) {
+        return handleResultMessagesNotificationException(ex, null,
+                HttpStatus.CONFLICT, request);
+    }
+
+    protected ResponseEntity<Object> handleResultMessagesNotificationException(
+            ResultMessagesNotificationException ex, HttpHeaders headers,
+            HttpStatus status, WebRequest request) {
+        String code = exceptionCodeResolver.resolveExceptionCode(ex);
+        RestError errorBody = restErrorCreator.createResultMessagesRestError(
+                code, ex.getResultMessages(), ex.getMessage(),
+                request.getLocale());
+        return handleExceptionInternal(ex, errorBody, headers, status, request);
+    }
+
+    @ExceptionHandler({ OptimisticLockingFailureException.class,
+            PessimisticLockingFailureException.class })
+    public ResponseEntity<Object> handleLockingFailureException(Exception ex,
+            WebRequest request) {
+        return handleExceptionInternal(ex, null, null, HttpStatus.CONFLICT,
                 request);
     }
 
-    private RestError createError(String code, Locale locale) {
-        return new RestError(code, messageSource.getMessage(code, null, locale));
-    }
-
-    private RestErrorDetail createErrorDetail(
-            DefaultMessageSourceResolvable error, Locale locale) {
-        return new RestErrorDetail(error.getCode(), messageSource.getMessage(
-                error, locale));
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Object> handleSystemError(Exception ex,
+            WebRequest request) {
+        return handleExceptionInternal(ex, null, null,
+                HttpStatus.INTERNAL_SERVER_ERROR, request);
     }
 
 }
